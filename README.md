@@ -18,7 +18,7 @@
 ![GitHub Release](https://img.shields.io/github/v/release/TTB-Network/python-openbmclapi-v2)
 ![GitHub Tag](https://img.shields.io/github/v/tag/TTB-Network/python-openbmclapi-v2)
 ![Docker Pulls](https://img.shields.io/docker/pulls/silianz/python-openbmclapi-v2)
-[![Crowdin](https://badges.crowdin.net/python-openbmclapi/localized.svg)](https://crowdin.com/project/python-openbmclapi)
+[![Crowdin](https://badges.crowdin.net/python-openbmclapi-site/localized.svg)](https://crowdin.com/project/python-openbmclapi-site)
 ![GitHub Repo stars](https://img.shields.io/github/stars/TTB-Network/python-openbmclapi-v2)
 [![CodeQL](https://github.com/TTB-Network/python-openbmclapi-v2/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/TTB-Network/python-openbmclapi-v2/actions/workflows/github-code-scanning/codeql)
 [![Create tagged release](https://github.com/TTB-Network/python-openbmclapi-v2/actions/workflows/build_and_publish.yml/badge.svg)](https://github.com/TTB-Network/python-openbmclapi-v2/actions/workflows/build_and_publish.yml)
