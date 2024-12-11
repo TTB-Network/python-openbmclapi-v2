@@ -5,7 +5,6 @@ from core.api import getStatus
 from typing import Union
 from aiohttp import web
 import aiohttp
-from pathlib import Path
 import random
 
 
@@ -70,23 +69,23 @@ class Router:
                 return web.Response(status=400)
 
         @self.route.get("/api/status")
-        async def _(request: web.Request) -> web.Response:
+        async def _(_: web.Request) -> web.Response:
             return await getStatus(self.cluster)
         
         @self.route.get("/api/rank")
-        async def _(request: web.Request) -> web.Response:
+        async def _(_: web.Request) -> web.Response:
             async with aiohttp.ClientSession('https://bd.bangbang93.com') as session:
                 data = await session.get('/openbmclapi/metric/rank')
                 response = web.json_response(await data.json())
                 return response
 
         @self.route.get("/")
-        async def _(request: web.Request) -> web.HTTPFound:
+        async def _(_: web.Request) -> web.HTTPFound:
             return web.HTTPFound("/dashboard")
 
         @self.route.get("/dashboard")
         @self.route.get("/dashboard/{tail:.*}")
-        async def _(request: web.Request) -> web.FileResponse:
+        async def _(_: web.Request) -> web.FileResponse:
             return web.FileResponse("./assets/dashboard/index.html")
         
         self.route.static('/', './assets/dashboard')

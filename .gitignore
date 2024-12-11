@@ -5,3 +5,4 @@ config/config.yml
 cache
 cert
 database
+.venv/

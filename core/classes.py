@@ -49,3 +49,7 @@ class Storage(ABC):
         hash: str, request: web.Request, response: web.StreamResponse
     ) -> Dict[str, Any]:
         pass
+
+    @abstractmethod
+    async def recycleFiles(files: FileList) -> None:
+        pass

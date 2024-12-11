@@ -2,6 +2,7 @@
 todo:
 1. 支持 report API
 2. 缺失文件时临时下载文件处理
+3. 断连时重新发送 disable 包
 """
 
 from core.config import Config
@@ -106,7 +107,6 @@ class Cluster:
         self.failed_filelist = FileList(files=[])
         self.enabled = False
         self.site = None
-        self.want_enable = False
         self.scheduler = None
         self.start_time = int(time.time() * 1000)
 
@@ -155,6 +155,7 @@ class Cluster:
             },
         ) as session:
             response = await session.get("/openbmclapi/configuration")
+            response.raise_for_status()
             config_data = (await response.json())["sync"]
             self.configuration = AgentConfiguration(**config_data)
             self.semaphore = asyncio.Semaphore(self.configuration.concurrency)
@@ -218,6 +219,10 @@ class Cluster:
             else:
                 logger.terror("cluster.error.sync_files.failed")
 
+    async def recycleFiles(self) -> None:
+        for storage in self.storages:
+            await storage.recycleFiles(self.filelist)
+
     async def downloadFile(
         self, file: FileInfo, session: aiohttp.ClientSession, pbar: tqdm
     ) -> None:
@@ -228,6 +233,7 @@ class Cluster:
                 try:
                     async with session.get(file.path) as response:
                         content = await response.read()
+                        response.raise_for_status()
                         results = await asyncio.gather(
                             *(
                                 storage.writeFile(
@@ -350,11 +356,10 @@ class Cluster:
                     host=Config.get("cluster.host"),
                     port=Config.get("cluster.public_port"),
                 )
-            self.want_enable = True
         except Exception as e:
             logger.terror("cluster.error.enable.exception", e=e)
 
-    async def keepAlive(self) -> None:
+    async def keepAlive(self) -> bool:
         if not self.enabled:
             logger.terror("cluster.error.keep_alive.cluster_not_enabled")
             return False
@@ -402,16 +407,18 @@ class Cluster:
                     IntervalTrigger(seconds=Config.get("advanced.keep_alive")),
                     max_instances=50,
                 )
+            
+            return bool(date)
 
         except Exception:
             logger.terror("cluster.error.keep_alive.error")
+            return False
 
     async def disable(self) -> None:
         if not self.socket or not self.enabled:
             return
 
         self.enabled = False
-        self.want_enable = False
         logger.tinfo("cluster.info.disabling")
         future = asyncio.Future()
 
@@ -447,15 +454,14 @@ class Cluster:
         @self.socket.on("connect")
         async def _() -> None:
             logger.tsuccess("client.success.connected")
-            if self.want_enable:
-                await self.enable()
-                if self.scheduler:
-                    self.scheduler.resume()
+            await self.disable()
+            await self.enable()
+            if self.scheduler:
+                self.scheduler.resume()
 
         @self.socket.on("disconnect")
         async def _() -> None:
             logger.twarning("client.warn.disconnected")
-            self.enabled = False
             if self.scheduler:
                 self.scheduler.pause()
 

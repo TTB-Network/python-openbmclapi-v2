@@ -1,9 +1,9 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://socialify.git.ci/TTB-Network/python-openbmclapi/image?description=1&font=Inter&language=1&logo=https%3A%2F%2Fpython-openbmclapi.ttb-network.top%2Fimg%2Flogo.svg&name=1&owner=1&pattern=Plus&theme=Dark">
-  <source media="(prefers-color-scheme: light)" srcset="https://socialify.git.ci/TTB-Network/python-openbmclapi/image?description=1&font=Inter&language=1&logo=https%3A%2F%2Fpython-openbmclapi.ttb-network.top%2Fimg%2Flogo.svg&name=1&owner=1&pattern=Plus&theme=Light">
-  <img src="https://socialify.git.ci/TTB-Network/python-openbmclapi/image?description=1&font=Inter&language=1&logo=https%3A%2F%2Fpython-openbmclapi.ttb-network.top%2Fimg%2Flogo.svg&name=1&owner=1&pattern=Plus&theme=Auto">
+  <source media="(prefers-color-scheme: dark)" srcset="https://socialify.git.ci/TTB-Network/python-openbmclapi-v2/image?description=1&font=Inter&language=1&logo=https%3A%2F%2Fpython-openbmclapi.ttb-network.top%2Fimg%2Flogo.svg&name=1&owner=1&pattern=Plus&theme=Dark">
+  <source media="(prefers-color-scheme: light)" srcset="https://socialify.git.ci/TTB-Network/python-openbmclapi-v2/image?description=1&font=Inter&language=1&logo=https%3A%2F%2Fpython-openbmclapi.ttb-network.top%2Fimg%2Flogo.svg&name=1&owner=1&pattern=Plus&theme=Light">
+  <img src="https://socialify.git.ci/TTB-Network/python-openbmclapi-v2/image?description=1&font=Inter&language=1&logo=https%3A%2F%2Fpython-openbmclapi.ttb-network.top%2Fimg%2Flogo.svg&name=1&owner=1&pattern=Plus&theme=Auto">
 </picture>
 
 # OpenBMCLAPI for Python v2
@@ -12,16 +12,16 @@
 
 简体中文 | [English](/i18n/README_en.md)
 
-![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/TTB-Network/python-openbmclapi)
-![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/TTB-Network/python-openbmclapi)
-![GitHub License](https://img.shields.io/github/license/TTB-Network/python-openbmclapi)
-![GitHub Release](https://img.shields.io/github/v/release/TTB-Network/python-openbmclapi)
-![GitHub Tag](https://img.shields.io/github/v/tag/TTB-Network/python-openbmclapi)
-![Docker Pulls](https://img.shields.io/docker/pulls/silianz/python-openbmclapi)
-[![Crowdin](https://badges.crowdin.net/python-openbmclapi-site/localized.svg)](https://crowdin.com/project/python-openbmclapi-site)
-![GitHub Repo stars](https://img.shields.io/github/stars/TTB-Network/python-openbmclapi)
-[![CodeQL](https://github.com/TTB-Network/python-openbmclapi/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/TTB-Network/python-openbmclapi/actions/workflows/github-code-scanning/codeql)
-[![Create tagged release](https://github.com/TTB-Network/python-openbmclapi/actions/workflows/build_and_publish.yml/badge.svg)](https://github.com/TTB-Network/python-openbmclapi/actions/workflows/build_and_publish.yml)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/TTB-Network/python-openbmclapi-v2)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/TTB-Network/python-openbmclapi-v2)
+![GitHub License](https://img.shields.io/github/license/TTB-Network/python-openbmclapi-v2)
+![GitHub Release](https://img.shields.io/github/v/release/TTB-Network/python-openbmclapi-v2)
+![GitHub Tag](https://img.shields.io/github/v/tag/TTB-Network/python-openbmclapi-v2)
+![Docker Pulls](https://img.shields.io/docker/pulls/silianz/python-openbmclapi-v2)
+[![Crowdin](https://badges.crowdin.net/python-openbmclapi-v2-site/localized.svg)](https://crowdin.com/project/python-openbmclapi-v2-site)
+![GitHub Repo stars](https://img.shields.io/github/stars/TTB-Network/python-openbmclapi-v2)
+[![CodeQL](https://github.com/TTB-Network/python-openbmclapi-v2/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/TTB-Network/python-openbmclapi-v2/actions/workflows/github-code-scanning/codeql)
+[![Create tagged release](https://github.com/TTB-Network/python-openbmclapi-v2/actions/workflows/build_and_publish.yml/badge.svg)](https://github.com/TTB-Network/python-openbmclapi-v2/actions/workflows/build_and_publish.yml)
 
 [文档](https://python-openbmclapi.ttb-network.top/) | [API](https://python-openbmclapi.ttb-network.top/docs/api) | [赞助](https://afdian.net/a/atianxiua)
 

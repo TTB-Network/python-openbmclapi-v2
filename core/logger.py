@@ -20,7 +20,7 @@ class LoggingLogger:
         self.log = Logger.opt(depth=1)
         self.log.remove()
         self.log.add(
-            sys.stderr,
+            sys.stdout,
             format=basic_logger_format,
             level="DEBUG" if debug_mode else "INFO",
             colorize=True,

@@ -4,7 +4,7 @@ import yaml
 import os
 
 defaults = {
-    "advanced.api_version": "1.11.0",
+    "advanced.api_version": "1.13.1",
     "advanced.lang": "zh_cn",
     "advanced.debug": False,
     "advanced.retry": 5,

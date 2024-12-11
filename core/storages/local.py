@@ -4,17 +4,19 @@ from core.i18n import locale
 from aiohttp import web
 from typing import Any, Dict
 from tqdm import tqdm
+from pathlib import Path
 import os
 import io
 import aiofiles
 import asyncio
 import tempfile
+import humanize
+
 
 
 class LocalStorage(Storage):
     def __init__(self, path: str) -> None:
         self.path = path
-        self.checked = False
 
     async def init(self) -> None:
         os.makedirs(self.path, exist_ok=True)
@@ -38,12 +40,15 @@ class LocalStorage(Storage):
             try:
                 async with aiofiles.open(file_path, "wb") as f:
                     await f.write(content.getbuffer())
-                await asyncio.sleep(0.1)
-                if os.path.getsize(file_path) == file.size:
+                    await f.close()
+                size = os.path.getsize(file_path)
+                if size == file.size:
                     return True
                 else:
                     logger.terror(
-                        "storage.error.write_file.size_mismatch", file=file.hash
+                        "storage.error.write_file.size_mismatch", file=file.hash,
+                        file_size=humanize.naturalsize(file.size, binary=True),
+                        actual_file_size=humanize.naturalsize(size, binary=True)
                     )
                     return False
             except Exception as e:
@@ -57,9 +62,6 @@ class LocalStorage(Storage):
         return False
 
     async def getMissingFiles(self, files: FileList, pbar: tqdm) -> FileList:
-        if self.checked == True:
-            return FileList(files=[])
-
         async def check_file(file: FileInfo, pbar: tqdm) -> bool:
             pbar.update(1)
             file_path = os.path.join(self.path, file.hash[:2], file.hash)
@@ -94,3 +96,45 @@ class LocalStorage(Storage):
         except Exception as e:
             logger.debug(e)
             return {"bytes": 0, "hits": 0}
+
+    async def recycleFiles(self, files: FileList) -> None:
+        delete_files = []
+
+        valid_paths = {
+            Path(os.path.join(self.path, file.hash[:2], file.hash)).resolve()
+            for file in files.files
+        }
+        all_files = list(Path(self.path).rglob("*"))
+        with tqdm(
+            desc=locale.t("storage.tqdm.desc.recycling_check"),
+            total=len(all_files),
+            unit_scale=True,
+            unit=locale.t("storage.tqdm.unit.files"),
+        ) as pbar:
+            for file in all_files:
+                pbar.update(1)
+                if file.is_file() and (file.resolve() not in valid_paths):
+                    delete_files.append(file)
+
+        if len(delete_files) == 0:
+            logger.tinfo("storage.success.no_need_to_recycle")
+            return
+        
+        with tqdm(
+            desc=locale.t("storage.tqdm.desc.recycling"),
+            total=len(delete_files),
+            unit_scale=True,
+            unit=locale.t("storage.tqdm.unit.files"),
+        ) as pbar:
+            size = 0
+            for file in delete_files:
+                total_size += file.stat().st_size
+                pbar.update(1)
+                try:
+                    file.unlink()
+                except Exception as e:
+                    logger.terror("storage.error.recycle", e=e)
+
+            logger.tsuccess("storage.success.recycled", size=humanize.naturalsize(size, binary=True))
+
+        
