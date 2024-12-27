@@ -128,7 +128,7 @@ class LocalStorage(Storage):
         ) as pbar:
             size = 0
             for file in delete_files:
-                total_size += file.stat().st_size
+                size += file.stat().st_size
                 pbar.update(1)
                 try:
                     file.unlink()

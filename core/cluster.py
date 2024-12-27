@@ -1,8 +1,7 @@
 """
 todo:
-1. 支持 report API
-2. 缺失文件时临时下载文件处理
-3. 断连时重新发送 disable 包
+1. 缺失文件时临时下载文件处理
+2. 断连时重新发送 disable 包
 """
 
 from core.config import Config
@@ -15,7 +14,8 @@ from core.router import Router
 from core.orm import writeHits
 from core.i18n import locale
 from typing import List, Any
-from aiohttp import web
+from aiohttp import web, ClientResponseError
+from urllib.parse import urljoin
 from tqdm import tqdm
 from pathlib import Path
 import toml
@@ -245,6 +245,16 @@ class Cluster:
                         if all(results):
                             pbar.update(len(content))
                             return
+
+                except ClientResponseError as e:
+                    logger.terror(
+                        "cluster.error.download_file.retry",
+                        file=file.hash,
+                        e=e.message,
+                        retry=delay,
+                    )
+                    self.report(e, session)
+
                 except Exception as e:
                     logger.terror(
                         "cluster.error.download_file.retry",
@@ -252,10 +262,20 @@ class Cluster:
                         e=e,
                         retry=delay,
                     )
+
                 await asyncio.sleep(delay)
 
             logger.terror("cluster.error.download_file.failed", file=file.hash)
             self.failed_filelist.files.append(file)
+
+    async def report(self, error: ClientResponseError, session: aiohttp.ClientSession) -> None:
+        history_urls = [urljoin(self.base_url), *error.history]
+        try:
+            async with session.post("/openbmclapi/report", data={"url": history_urls, "error": error.message}) as response:
+                response.raise_for_status()
+                logger.tdebug("cluster.debug.report", url=history_urls)
+        except Exception:
+            pass
 
     async def setupRouter(self) -> None:
         logger.tinfo("cluster.info.router.creating")
