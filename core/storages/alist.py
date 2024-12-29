@@ -81,7 +81,11 @@ class AListStorage(Storage):
                     existing_files += await getFileList(dir, pbar)
 
         existing_info: Set[Tuple[str, int]] = {(file.hash, file.size) for file in existing_files}
-        missing_files = [file for file in files.files if (file.hash, file.size) not in existing_info]
+        missing_files = []
+        for file in files.files:
+            pbar.update(1)
+            if (file.hash, file.size) not in existing_info:
+                missing_files.append(file)
 
         return FileList(files=missing_files)
 
