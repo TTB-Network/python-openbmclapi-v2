@@ -46,8 +46,8 @@ class Storage(ABC):
 
     @abstractmethod
     async def express(
-        hash: str, request: web.Request, response: web.StreamResponse
-    ) -> Dict[str, Any]:
+        hash: str, counters: dict
+    ) -> web.Response:
         pass
 
     @abstractmethod

@@ -4,7 +4,6 @@ from core.utils import checkSign
 from core.api import getStatus
 from core.storages import AListStorage
 from core.logger import logger
-from typing import Union
 from aiohttp import web
 import aiohttp
 import random
@@ -31,12 +30,10 @@ class Router:
             if not checkSign(file_hash, self.secret, request.query):
                 return web.Response(text="Invalid signature.", status=403)
 
-            response = None
-            data = await random.choice(self.storages).express(
-                file_hash, request, response
+            response = await random.choice(self.storages).express(
+                file_hash, self.counters
             )
-            self.counters["bytes"] += data["bytes"]
-            self.counters["hits"] += data["hits"]
+            
             self.connection -= 1
             logger.debug(response)
             return response

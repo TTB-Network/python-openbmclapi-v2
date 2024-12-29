@@ -118,24 +118,24 @@ class AListStorage(Storage):
             logger.terror("storage.error.alist.measure", e=e)
             return ""
 
-    async def express(self, hash: str, request: web.Request, response) -> Dict[str, Any]:
+    async def express(self, hash: str, counter: dict) -> web.Response:
         path = f"{self.path}/{hash[:2]}/{hash}"
         async with aiohttp.ClientSession(self.url, headers=self.headers) as session:
             res = await session.post("/api/fs/get", json={"path": path, "password": self.password})
             data = await res.json()
             if data["code"] != 200:
                 response = web.HTTPNotFound()
-                return {"bytes": 0, "hits": 0}
+                return response
             try:
                 response = web.HTTPFound(data["data"]["raw_url"])
                 response.headers["x-bmclapi-hash"] = hash
-                logger.debug(data)
-                logger.debug(response)
-                return {"bytes": data["data"]["size"], "hits": 1}
+                counter["bytes"] += data["data"]["size"]
+                counter["hits"] += 1
+                return response
             except Exception as e:
                 response = web.HTTPError(text=e)
                 logger.debug(e)
-                return {"bytes": 0, "hits": 0}
+                return response
 
     async def writeFile(self, file: FileInfo, content: io.BytesIO, delay: int, retry: int) -> bool:
         file_path = f"{self.path}/{file.hash[:2]}/{file.hash}"

@@ -84,22 +84,22 @@ class LocalStorage(Storage):
         return FileList(files=missing_files)
 
     async def express(
-        self, hash: str, request: web.Request, response
-    ) -> Dict[str, Any]:
+        self, hash: str, counter: dict
+    ) -> web.Response:
         path = os.path.join(self.path, hash[:2], hash)
         if not os.path.exists(path):
             response = web.HTTPNotFound()
-            await response.prepare(request)
-            return {"bytes": 0, "hits": 0}
+            response
         try:
             file_size = os.path.getsize(path)
             response = web.FileResponse(path, status=200)
             response.headers["x-bmclapi-hash"] = hash
-            await response.prepare(request)
-            return {"bytes": file_size, "hits": 1}
+            counter["bytes"] += file_size
+            counter["hits"] += 1
+            return response
         except Exception as e:
             logger.debug(e)
-            return {"bytes": 0, "hits": 0}
+            return
 
     async def recycleFiles(self, files: FileList) -> None:
         delete_files = []
