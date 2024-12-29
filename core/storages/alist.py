@@ -96,7 +96,7 @@ class AListStorage(Storage):
                 response = await session.post("/api/fs/get", json={"path": file_path, "password": self.password})
                 response.raise_for_status()
                 data = await response.json()
-
+                logger.debug(data)
                 if data["code"] == 200:
                     response = web.HTTPFound(data["raw_url"])
                     response.prepare(request)
