@@ -54,6 +54,7 @@ async def main():
         await cluster.setupRouter()
         await cluster.listen(protocol == "https", Config.get("cluster.port"))
         await cluster.enable()
+        cluster.want_enable = True
         if not cluster.enabled:
             raise asyncio.CancelledError
         scheduler.start()
@@ -65,6 +66,7 @@ async def main():
     except asyncio.CancelledError:
         logger.tinfo("main.info.stopping")
         if cluster.enabled:
+            cluster.want_enable = False
             await cluster.disable()
         if cluster.socket:
             await cluster.socket.disconnect()
