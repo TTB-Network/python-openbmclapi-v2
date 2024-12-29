@@ -102,8 +102,8 @@ class AListStorage(Storage):
                 if data["code"] != 200:
                     logger.debug(2)
                     try:
-                        buffer = b"\x00\x66\xcc\xff" * 256 * 1024
-                        response = await session.put("/api/fs/put", data=buffer, headers={**self.headers, "File-Path": file_path, "Content-Type": "application/octet-stream"})
+                        buffer = b"\x00\x66\xcc\xff" * 256 * 1024 * size
+                        response = await session.put("/api/fs/put", data=buffer, headers={**self.headers, "File-Path": file_path, "Content-Type": "application/octet-stream", "Content-Length": str(size * 1024 * 1024)})
                         response.raise_for_status()
                         data = await response.json()
                         if data["code"] != 200:
