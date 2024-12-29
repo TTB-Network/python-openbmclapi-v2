@@ -270,10 +270,15 @@ class Cluster:
             logger.terror("cluster.error.download_file.failed", file=file.hash)
             self.failed_filelist.files.append(file)
 
-    async def report(self, error: ClientResponseError, session: aiohttp.ClientSession) -> None:
+    async def report(
+        self, error: ClientResponseError, session: aiohttp.ClientSession
+    ) -> None:
         history_urls = [urljoin(self.base_url), *error.history]
         try:
-            async with session.post("/openbmclapi/report", json={"url": history_urls, "error": error.message}) as response:
+            async with session.post(
+                "/openbmclapi/report",
+                json={"url": history_urls, "error": error.message},
+            ) as response:
                 response.raise_for_status()
                 logger.tdebug("cluster.debug.report", url=history_urls)
         except Exception:
@@ -313,7 +318,7 @@ class Cluster:
     async def enable(self) -> None:
         if self.enabled:
             return
-        
+
         logger.tinfo("cluster.info.enabling")
         future = asyncio.Future()
 
@@ -340,12 +345,19 @@ class Cluster:
                     "flavor": {
                         "runtime": f"python/{sys.version.split()[0]} python-openbmclapi/{VERSION}",
                         "storage": "+".join(
-                        [
-                            "file" if isinstance(storage, LocalStorage) else
-                            "webdav" if isinstance(storage, AListStorage) else
-                            ""
-                            for storage in self.storages
-                        ])
+                            [
+                                (
+                                    "file"
+                                    if isinstance(storage, LocalStorage)
+                                    else (
+                                        "webdav"
+                                        if isinstance(storage, AListStorage)
+                                        else ""
+                                    )
+                                )
+                                for storage in self.storages
+                            ]
+                        ),
                     },
                 },
                 callback=callback,
@@ -429,7 +441,7 @@ class Cluster:
                     IntervalTrigger(seconds=Config.get("advanced.keep_alive")),
                     max_instances=50,
                 )
-            
+
             return bool(date)
 
         except Exception:

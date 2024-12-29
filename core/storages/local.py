@@ -83,9 +83,7 @@ class LocalStorage(Storage):
         ]
         return FileList(files=missing_files)
 
-    async def express(
-        self, hash: str, counter: dict
-    ) -> web.Response:
+    async def express(self, hash: str, counter: dict) -> web.Response:
         path = os.path.join(self.path, hash[:2], hash)
         if not os.path.exists(path):
             response = web.HTTPNotFound()
@@ -101,6 +99,7 @@ class LocalStorage(Storage):
             response = web.HTTPError(text=e)
             logger.debug(e)
             return response
+
     async def recycleFiles(self, files: FileList) -> None:
         delete_files = []
 

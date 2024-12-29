@@ -33,7 +33,7 @@ class Router:
             response = await random.choice(self.storages).express(
                 file_hash, self.counters
             )
-            
+
             self.connection -= 1
             logger.debug(response)
             return response
@@ -78,11 +78,11 @@ class Router:
         @self.route.get("/api/status")
         async def _(_: web.Request) -> web.Response:
             return await getStatus(self.cluster)
-        
+
         @self.route.get("/api/rank")
         async def _(_: web.Request) -> web.Response:
-            async with aiohttp.ClientSession('https://bd.bangbang93.com') as session:
-                data = await session.get('/openbmclapi/metric/rank')
+            async with aiohttp.ClientSession("https://bd.bangbang93.com") as session:
+                data = await session.get("/openbmclapi/metric/rank")
                 response = web.json_response(await data.json())
                 return response
 
@@ -94,7 +94,7 @@ class Router:
         @self.route.get("/dashboard/{tail:.*}")
         async def _(_: web.Request) -> web.FileResponse:
             return web.FileResponse("./assets/dashboard/index.html")
-        
-        self.route.static('/', './assets/dashboard')
+
+        self.route.static("/", "./assets/dashboard")
 
         self.app.add_routes(self.route)

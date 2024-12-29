@@ -1,13 +1,53 @@
-export interface Config {
-    language: string
-    clusterId: string
-    clusterSecret: string
-    password: string
-    username: string
-    byoc: boolean
-    host?: string
+import axios from 'axios'
+
+axios.defaults.baseURL = "https://bugungu.5k.work:4152/"
+
+export interface StatsData {
+    hits: number
+    bytes: number
 }
 
-export async function postConfig() {
+export interface Stats {
+    hours: StatsData[]
+    days: StatsData[]
+    months: StatsData[]
+}
 
+export interface UserAgent {
+    [ua: string]: number
+}
+
+export interface Cluster {
+    _id: string
+    name: string
+    isEnabled: boolean
+    metric?: {
+        bytes: number
+        hits: number
+    }
+}
+
+export interface StatsRes {
+    status: number
+    startTime: number // UTC time
+    stats: Stats
+    prevStats: Stats
+    accesses: UserAgent
+    connections: number
+    memory: number
+    cpu: number
+    cpuType: string
+    pythonVersion: string
+    apiVersion: string
+    version: string
+}
+
+export async function fetchStat() {
+    const res = await axios.get<StatsRes>('/api/status')
+    return res.data
+}
+
+export async function fetchRank() {
+    const res = await axios.get<Cluster[]>('/api/rank')
+    return res.data
 }
