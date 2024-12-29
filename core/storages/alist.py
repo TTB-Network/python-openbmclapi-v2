@@ -90,7 +90,7 @@ class AListStorage(Storage):
         return FileList(files=missing_files)
 
     async def measure(self, size: int, request: web.Request, response):
-        file_path = f"{self.path}/.{size}"
+        file_path = f"{self.path}/measure/.{size}"
         try:
             async with aiohttp.ClientSession(self.url, headers=self.headers) as session:
                 response = await session.post("/api/fs/get", json={"path": file_path, "password": self.password})
