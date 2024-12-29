@@ -135,7 +135,7 @@ class AListStorage(Storage):
                 response = web.HTTPFound(data["data"]["raw_url"])
                 response.headers["x-bmclapi-hash"] = hash
                 await response.prepare(request)
-                return {"bytes": data["size"], "hits": 1}
+                return {"bytes": data["data"]["size"], "hits": 1}
             except Exception as e:
                 response = web.HTTPInternalServerError(reason=e)
                 await response.prepare(request)
