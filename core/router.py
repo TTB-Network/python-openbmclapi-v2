@@ -53,7 +53,7 @@ class Router:
                 response = None
                 for storage in self.storages:
                     if isinstance(storage, AListStorage):
-                        url = storage.measure(size, response)
+                        url = storage.measure(size)
                         response = web.HTTPFound(url)
                         response.prepare(request)                        
                         return response
