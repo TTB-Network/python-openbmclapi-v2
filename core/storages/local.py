@@ -89,7 +89,7 @@ class LocalStorage(Storage):
         path = os.path.join(self.path, hash[:2], hash)
         if not os.path.exists(path):
             response = web.HTTPNotFound()
-            response
+            return response
         try:
             file_size = os.path.getsize(path)
             response = web.FileResponse(path, status=200)
@@ -98,9 +98,9 @@ class LocalStorage(Storage):
             counter["hits"] += 1
             return response
         except Exception as e:
+            response = web.HTTPError(text=e)
             logger.debug(e)
-            return
-
+            return response
     async def recycleFiles(self, files: FileList) -> None:
         delete_files = []
 
