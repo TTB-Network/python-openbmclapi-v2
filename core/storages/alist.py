@@ -125,13 +125,13 @@ class AListStorage(Storage):
             data = await res.json()
             if data["code"] != 200:
                 response = web.HTTPNotFound()
-                await response.prepare(request)
                 return {"bytes": 0, "hits": 0}
             try:
                 response = web.HTTPFound(data["data"]["raw_url"])
                 response.headers["x-bmclapi-hash"] = hash
                 logger.debug(data)
                 logger.debug(response)
+                await response.prepare(request)
                 return {"bytes": data["data"]["size"], "hits": 1}
             except Exception as e:
                 response = web.HTTPError(text=e)
