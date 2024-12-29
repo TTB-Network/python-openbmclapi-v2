@@ -1,7 +1,5 @@
 import axios from 'axios'
 
-axios.defaults.baseURL = "https://bugungu.5k.work:4152/"
-
 export interface StatsData {
     hits: number
     bytes: number
@@ -29,7 +27,7 @@ export interface Cluster {
 
 export interface StatsRes {
     status: number
-    startTime: number // UTC time
+    startTime: number
     stats: Stats
     prevStats: Stats
     accesses: UserAgent
@@ -50,4 +48,30 @@ export async function fetchStat() {
 export async function fetchRank() {
     const res = await axios.get<Cluster[]>('/api/rank')
     return res.data
+}
+
+function getWebSocketURL(path: string) {
+    const baseURL = axios.defaults.baseURL || ''
+    const url = new URL(baseURL)
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+    url.pathname = path
+    return url.toString()
+}
+
+const ws = new WebSocket(getWebSocketURL('/ws/logs'))
+
+ws.onmessage = function(event) {
+    console.log('Received log:', event.data)
+}
+
+ws.onopen = function() {
+    console.log("WebSocket connection established.")
+}
+
+ws.onclose = function() {
+    console.log("WebSocket connection closed.")
+}
+
+ws.onerror = function(error) {
+    console.error("WebSocket error:", error)
 }

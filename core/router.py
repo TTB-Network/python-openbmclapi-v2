@@ -4,7 +4,7 @@ from core.utils import checkSign
 from core.api import getStatus
 from core.storages import AListStorage
 from core.logger import logger
-from aiohttp import web
+from aiohttp import web, WSMsgType
 import aiohttp
 import random
 
@@ -12,14 +12,16 @@ import random
 class Router:
     def __init__(self, app: web.Application, cluster) -> None:
         self.app = app
-        self.secret = Config.get("cluster.secret")
+        self.secret = cluster.secret
         self.storages = cluster.storages
         self.counters = {"hits": 0, "bytes": 0}
         self.route = web.RouteTableDef()
         self.cluster = cluster
+        self.ws_clients = []
         self.connection = 0
 
     def init(self) -> None:
+        logger.add(self.pushLog, level="DEBUG")
         @self.route.get("/download/{hash}")
         async def _(
             request: web.Request,
@@ -85,6 +87,26 @@ class Router:
                 data = await session.get("/openbmclapi/metric/rank")
                 response = web.json_response(await data.json())
                 return response
+        
+        @self.route.get("/ws/logs")
+        async def _(request: web.Request) -> web.WebSocketResponse:
+            ws = web.WebSocketResponse()
+            await ws.prepare(request)
+
+            self.ws_clients.append(ws)
+            logger.debug("WebSocket client connected.")
+
+            try:
+                while True:
+                    msg = await ws.receive()
+                    if msg.type == WSMsgType.TEXT:
+                        pass
+
+            except Exception:
+                pass
+            finally:
+                self.ws_clients.remove(ws)
+            return ws
 
         @self.route.get("/")
         async def _(_: web.Request) -> web.HTTPFound:
@@ -98,3 +120,11 @@ class Router:
         self.route.static("/", "./assets/dashboard")
 
         self.app.add_routes(self.route)
+
+    async def pushLog(self, message: str) -> None:
+        if self.ws_clients:
+            for ws in self.ws_clients:
+                try:
+                    await ws.send_str(message)
+                except Exception:
+                    pass

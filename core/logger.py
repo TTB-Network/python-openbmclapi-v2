@@ -8,7 +8,6 @@ basic_logger_format = "<green>[{time:YYYY-MM-DD HH:mm:ss}]</green><level>[{level
 debug_mode = Config.get("advanced.debug")
 
 
-# 鉴定为屎山
 def filter(record):
     if "apscheduler" in record["name"]:
         record["depth"] = 2
@@ -39,6 +38,7 @@ class LoggingLogger:
         self.warning = self.log.warning
         self.error = self.log.error
         self.success = self.log.success
+        self.add = self.log.add
 
     def tinfo(self, key: str, *args, **kwargs):
         self.info(locale.t(key=key, *args, **kwargs))

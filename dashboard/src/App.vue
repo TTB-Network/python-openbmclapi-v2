@@ -2,7 +2,6 @@
 import Menubar from 'primevue/menubar'
 import { RouterView } from 'vue-router'
 import { ref } from 'vue'
-import Button from 'primevue/button'
 const items = ref([
     {
         label: '主页',

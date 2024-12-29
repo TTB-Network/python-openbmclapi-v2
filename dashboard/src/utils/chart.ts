@@ -9,7 +9,7 @@ interface Option {
 
 Chart.register({
     id: 'custom-vertical-line',
-    afterDatasetDraw: function (chart, args, { lineX, lineWidth, lineColor }: Option) {
+    afterDatasetDraw: function (chart, _args, { lineX, lineWidth, lineColor }: Option) {
         if (typeof lineX === 'object' && lineX) {
             lineX = lineX.value
         }
