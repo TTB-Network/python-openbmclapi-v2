@@ -3,6 +3,7 @@ from core.config import Config
 from core.utils import checkSign
 from core.api import getStatus
 from core.storages import AListStorage
+from core.logger import logger
 from typing import Union
 from aiohttp import web
 import aiohttp
@@ -23,7 +24,7 @@ class Router:
         @self.route.get("/download/{hash}")
         async def _(
             request: web.Request,
-        ) -> Union[web.Response, web.FileResponse, web.StreamResponse]:
+        ) -> web.Response:
             self.connection += 1
             writeAgent(request.headers["User-Agent"], 1)
             file_hash = request.match_info.get("hash", "").lower()
@@ -37,6 +38,7 @@ class Router:
             self.counters["bytes"] += data["bytes"]
             self.counters["hits"] += data["hits"]
             self.connection -= 1
+            logger.debug(response)
             return response
 
         @self.route.get("/measure/{size}")
