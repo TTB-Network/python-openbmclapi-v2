@@ -96,11 +96,9 @@ class AListStorage(Storage):
                 response = await session.post("/api/fs/get", json={"path": file_path, "password": self.password})
                 response.raise_for_status()
                 data = await response.json()
-                logger.debug(data)
                 if data["code"] == 200:
                     return data["data"]["raw_url"]
                 if data["code"] != 200:
-                    logger.debug(2)
                     try:
                         buffer = b"\x00\x66\xcc\xff" * 256 * 1024 * size
                         response = await session.put("/api/fs/put", data=buffer, headers={**self.headers, "File-Path": file_path, "Content-Type": "application/octet-stream", "Content-Length": str(size * 1024 * 1024)})
@@ -115,12 +113,10 @@ class AListStorage(Storage):
                 response = await session.post("/api/fs/get", json={"path": file_path, "password": self.password})
                 response.raise_for_status()
                 data = await response.json()
-                logger.debug(data)
-                logger.debug(3)
                 return data["data"]["raw_url"]
         except Exception as e:
             logger.terror("storage.error.alist.measure", e=e)
-            return
+            return ""
 
     async def express(self, hash: str, request: web.Request, response) -> Dict[str, Any]:
         path = f"{self.path}/{hash[:2]}/{hash}"
@@ -137,7 +133,7 @@ class AListStorage(Storage):
                 await response.prepare(request)
                 return {"bytes": data["data"]["size"], "hits": 1}
             except Exception as e:
-                response = web.HTTPInternalServerError(reason=e)
+                response = web.HTTPError(text=e)
                 await response.prepare(request)
                 logger.debug(e)
                 return {"bytes": 0, "hits": 0}
