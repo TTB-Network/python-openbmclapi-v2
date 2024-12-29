@@ -55,7 +55,6 @@ class Router:
                     if isinstance(storage, AListStorage):
                         url = await storage.measure(size)
                         response = web.HTTPFound(url)
-                        await response.prepare(request)                        
                         return response
 
                 buffer = b"\x00\x66\xcc\xff" * 256 * 1024
