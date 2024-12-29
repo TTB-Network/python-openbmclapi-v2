@@ -75,10 +75,10 @@ class AListStorage(Storage):
                     return []
                 return [FileInfo(size=content["size"], hash=content["name"], path="", mtime=-1) for content in data["data"]["content"] if not content["is_dir"]]
             
-            with tqdm(desc=locale.t("storage.tqdm.alist.get_filelist"), total=256) as pbar:
+            with tqdm(desc=locale.t("storage.tqdm.alist.get_filelist"), total=256) as _pbar:
                 for i in range(256):
                     dir = f"/{i:02x}"
-                    existing_files += await getFileList(dir, pbar)
+                    existing_files += await getFileList(dir, _pbar)
 
         existing_info: Set[Tuple[str, int]] = {(file.hash, file.size) for file in existing_files}
         missing_files = []
@@ -99,7 +99,7 @@ class AListStorage(Storage):
                 logger.debug(data)
                 if data["code"] == 200:
                     logger.debug(1)
-                    response = web.HTTPFound(data["raw_url"])
+                    response = web.HTTPFound(data["data"]["raw_url"])
                     response.prepare(request)
                     return
 
@@ -121,7 +121,7 @@ class AListStorage(Storage):
                 data = await response.json()
                 logger.debug(data)
                 logger.debug(3)
-                response = web.HTTPFound(data["raw_url"])
+                response = web.HTTPFound(data["data"]["raw_url"])
                 response.prepare(request)
                 return
         except Exception as e:
