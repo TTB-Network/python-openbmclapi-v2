@@ -132,7 +132,7 @@ class AListStorage(Storage):
                 await response.prepare(request)
                 return {"bytes": 0, "hits": 0}
             try:
-                response = web.HTTPFound(data["raw_url"])
+                response = web.HTTPFound(data["data"]["raw_url"])
                 response.headers["x-bmclapi-hash"] = hash
                 await response.prepare(request)
                 return {"bytes": data["size"], "hits": 1}
