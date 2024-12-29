@@ -3,7 +3,7 @@ import Card from "primevue/card";
 import Button from "primevue/button";
 import { ref, computed } from "vue";
 import { z } from "zod";
-import { postConfig, Config } from "../api";
+import { Config } from "../api";
 import InputText from "primevue/inputtext";
 import Select from "primevue/select";
 import { Form, FormSubmitEvent } from "@primevue/forms";
