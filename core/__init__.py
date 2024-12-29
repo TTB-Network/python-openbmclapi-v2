@@ -35,7 +35,7 @@ async def main():
                 Config.get("advanced.retry"),
                 Config.get("advanced.delay"),
             )
-            asyncio.create_task(cluster.recycleFiles())
+            # asyncio.create_task(cluster.recycleFiles())
             if not cluster.enabled and cluster.socket:
                 await cluster.enable()
             if cluster.scheduler:

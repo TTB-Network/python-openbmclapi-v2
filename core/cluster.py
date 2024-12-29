@@ -8,7 +8,7 @@ from core.config import Config
 from core.logger import logger
 from core.scheduler import *
 from core.exceptions import ClusterIdNotSetError, ClusterSecretNotSetError
-from core.storages import getStorages, LocalStorage
+from core.storages import getStorages, LocalStorage, AListStorage
 from core.classes import FileInfo, FileList, AgentConfiguration
 from core.router import Router
 from core.orm import writeHits
@@ -69,7 +69,7 @@ class Token:
             ).hexdigest()
             response = await session.post(
                 "/openbmclapi-agent/token",
-                data={
+                json={
                     "clusterId": self.id,
                     "challenge": challenge,
                     "signature": signature,
@@ -226,6 +226,7 @@ class Cluster:
     async def downloadFile(
         self, file: FileInfo, session: aiohttp.ClientSession, pbar: tqdm
     ) -> None:
+        # logger.debug(file)
         async with self.semaphore:
             delay, retry = Config.get("advanced.delay"), Config.get("advanced.retry")
 
@@ -271,7 +272,7 @@ class Cluster:
     async def report(self, error: ClientResponseError, session: aiohttp.ClientSession) -> None:
         history_urls = [urljoin(self.base_url), *error.history]
         try:
-            async with session.post("/openbmclapi/report", data={"url": history_urls, "error": error.message}) as response:
+            async with session.post("/openbmclapi/report", json={"url": history_urls, "error": error.message}) as response:
                 response.raise_for_status()
                 logger.tdebug("cluster.debug.report", url=history_urls)
         except Exception:
@@ -338,12 +339,12 @@ class Cluster:
                     "flavor": {
                         "runtime": f"python/{sys.version.split()[0]} python-openbmclapi/{VERSION}",
                         "storage": "+".join(
-                            [
-                                "file"
-                                for storage in self.storages
-                                if isinstance(storage, LocalStorage)
-                            ]
-                        ),
+                        [
+                            "file" if isinstance(storage, LocalStorage) else
+                            "webdav" if isinstance(storage, AListStorage) else
+                            ""
+                            for storage in self.storages
+                        ])
                     },
                 },
                 callback=callback,

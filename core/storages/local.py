@@ -13,7 +13,6 @@ import tempfile
 import humanize
 
 
-
 class LocalStorage(Storage):
     def __init__(self, path: str) -> None:
         self.path = path
@@ -22,20 +21,23 @@ class LocalStorage(Storage):
         os.makedirs(self.path, exist_ok=True)
 
     async def check(self) -> None:
-        logger.tinfo("storage.info.check")
+        logger.tinfo("storage.info.local.check")
         try:
             with tempfile.NamedTemporaryFile(dir=self.path, delete=True) as temp_file:
                 temp_file.write(b"")
-            logger.tsuccess("storage.success.check")
+            logger.tsuccess("storage.success.local.check")
         except Exception as e:
-            raise Exception(locale.t("storage.error.check", e=e))
+            raise Exception(locale.t("storage.error.local.check", e=e))
 
     async def writeFile(
         self, file: FileInfo, content: io.BytesIO, delay: int, retry: int
     ) -> bool:
         file_path = os.path.join(self.path, file.hash[:2], file.hash)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
+        if Path(file_path).exists and Path(file_path).stat().st_size == len(
+            content.getvalue()
+        ):
+            return True
         for _ in range(retry):
             try:
                 async with aiofiles.open(file_path, "wb") as f:
@@ -46,23 +48,27 @@ class LocalStorage(Storage):
                     return True
                 else:
                     logger.terror(
-                        "storage.error.write_file.size_mismatch", file=file.hash,
+                        "storage.error.local.write_file.size_mismatch",
+                        file=file.hash,
                         file_size=humanize.naturalsize(file.size, binary=True),
-                        actual_file_size=humanize.naturalsize(size, binary=True)
+                        actual_file_size=humanize.naturalsize(size, binary=True),
                     )
                     return False
             except Exception as e:
                 logger.terror(
-                    "storage.error.write_file.retry", file=file.hash, e=e, retry=delay
+                    "storage.error.local.write_file.retry",
+                    file=file.hash,
+                    e=e,
+                    retry=delay,
                 )
 
             await asyncio.sleep(delay)
 
-        logger.terror("storage.error.write_file.failed", file=file.hash)
+        logger.terror("storage.error.local.write_file.failed", file=file.hash)
         return False
 
     async def getMissingFiles(self, files: FileList, pbar: tqdm) -> FileList:
-        async def check_file(file: FileInfo, pbar: tqdm) -> bool:
+        async def checkFile(file: FileInfo, pbar: tqdm) -> bool:
             pbar.update(1)
             file_path = os.path.join(self.path, file.hash[:2], file.hash)
             try:
@@ -71,9 +77,7 @@ class LocalStorage(Storage):
             except FileNotFoundError:
                 return True
 
-        results = await asyncio.gather(
-            *[check_file(file, pbar) for file in files.files]
-        )
+        results = await asyncio.gather(*[checkFile(file, pbar) for file in files.files])
         missing_files = [
             file for file, is_missing in zip(files.files, results) if is_missing
         ]
@@ -84,8 +88,8 @@ class LocalStorage(Storage):
     ) -> Dict[str, Any]:
         path = os.path.join(self.path, hash[:2], hash)
         if not os.path.exists(path):
-            response = web.Response()
-            response.set_status(404, "File not found")
+            response = web.HTTPNotFound()
+            await response.prepare(request)
             return {"bytes": 0, "hits": 0}
         try:
             file_size = os.path.getsize(path)
@@ -117,9 +121,9 @@ class LocalStorage(Storage):
                     delete_files.append(file)
 
         if len(delete_files) == 0:
-            logger.tinfo("storage.success.no_need_to_recycle")
+            logger.tinfo("storage.success.local.no_need_to_recycle")
             return
-        
+
         with tqdm(
             desc=locale.t("storage.tqdm.desc.recycling"),
             total=len(delete_files),
@@ -133,8 +137,9 @@ class LocalStorage(Storage):
                 try:
                     file.unlink()
                 except Exception as e:
-                    logger.terror("storage.error.recycle", e=e)
+                    logger.terror("storage.error.local.recycle", e=e)
 
-            logger.tsuccess("storage.success.recycled", size=humanize.naturalsize(size, binary=True))
-
-        
+            logger.tsuccess(
+                "storage.success.local.recycled",
+                size=humanize.naturalsize(size, binary=True),
+            )

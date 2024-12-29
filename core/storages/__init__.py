@@ -12,5 +12,12 @@ def getStorages() -> List[Storage]:
         if storage["type"] == "local":
             storages.append(LocalStorage(path=storage["path"]))
         if storage["type"] == "alist":
-            storages.append(AListStorage())
+            storages.append(
+                AListStorage(
+                    username=storage["username"],
+                    password=storage["password"],
+                    url=storage["url"],
+                    path=storage["path"],
+                )
+            )
     return storages

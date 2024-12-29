@@ -2,6 +2,7 @@ from core.orm import writeAgent
 from core.config import Config
 from core.utils import checkSign
 from core.api import getStatus
+from core.storages import AListStorage
 from typing import Union
 from aiohttp import web
 import aiohttp
@@ -48,6 +49,12 @@ class Router:
                     or size > 200
                 ):
                     return web.Response(status=403 if size > 200 else 400)
+
+                response = None
+                for storage in self.storages:
+                    if isinstance(storage, AListStorage):
+                        await storage.measure(size, request, response)
+                        return response
 
                 buffer = b"\x00\x66\xcc\xff" * 256 * 1024
                 response = web.StreamResponse(
