@@ -130,6 +130,7 @@ class AListStorage(Storage):
             try:
                 response = web.HTTPFound(data["data"]["raw_url"])
                 response.headers["x-bmclapi-hash"] = hash
+                logger.debug(data)
                 logger.debug(response)
                 return {"bytes": data["data"]["size"], "hits": 1}
             except Exception as e:
