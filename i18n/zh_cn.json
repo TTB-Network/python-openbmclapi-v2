@@ -27,6 +27,7 @@
     "storage.error.alist.write_file.retry": "在尝试写入 AList 文件 ${file} 时遇到错误：${e}，将在 ${retry}s 后重试。",
     "storage.error.alist.write_file.size_mismatch": "无法校验文件 ${file} 的大小。理论值：${file_size}，实际值：${actual_file_size}。",
     "storage.error.alist.upload": "无法上传测速文件：${e}。",
+    "storage.error.alist.measure": "无法服务测速文件：${e}。",
     "storage.tqdm.alist.get_filelist": "获取 AList 储存文件列表中",
     "i18n.prompt.failed": "（i18n 字符串解析失败）",
     "cluster.info.filelist.fetching": "正在获取文件列表……",
