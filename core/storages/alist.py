@@ -90,7 +90,7 @@ class AListStorage(Storage):
         existing_files: List[FileInfo] = []
         async with aiohttp.ClientSession(self.url, headers=self.headers) as session:
 
-            async def getFileList(dir: str) -> List[FileInfo]:
+            async def getFileList(dir: str, pbar: tqdm) -> List[FileInfo]:
                 file_path = self.path + dir
                 response = await session.post(
                     "/api/fs/list", headers=self.headers, json={"path": file_path}
@@ -113,7 +113,7 @@ class AListStorage(Storage):
             ) as _pbar:
                 for i in range(256):
                     dir = f"/{i:02x}"
-                    existing_files += await getFileList(dir)
+                    existing_files += await getFileList(dir, _pbar)
 
         existing_info: Set[Tuple[str, int]] = {
             (file.hash, file.size) for file in existing_files

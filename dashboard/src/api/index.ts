@@ -51,11 +51,9 @@ export async function fetchRank() {
 }
 
 function getWebSocketURL(path: string) {
-    const baseURL = axios.defaults.baseURL || ''
-    const url = new URL(baseURL)
-    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-    url.pathname = path
-    return url.toString()
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const host = window.location.host
+    return `${protocol}//${host}${path}`
 }
 
 const ws = new WebSocket(getWebSocketURL('/ws/logs'))
