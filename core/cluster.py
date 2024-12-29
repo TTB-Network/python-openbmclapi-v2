@@ -107,6 +107,7 @@ class Cluster:
         self.failed_filelist = FileList(files=[])
         self.enabled = False
         self.site = None
+        self.want_enable = False
         self.scheduler = None
         self.start_time = int(time.time() * 1000)
 
@@ -312,7 +313,7 @@ class Cluster:
     async def enable(self) -> None:
         if self.enabled:
             return
-
+        
         logger.tinfo("cluster.info.enabling")
         future = asyncio.Future()
 
@@ -476,7 +477,8 @@ class Cluster:
         async def _() -> None:
             logger.tsuccess("client.success.connected")
             await self.disable()
-            await self.enable()
+            if self.want_enable:
+                await self.enable()
             if self.scheduler:
                 self.scheduler.resume()
 

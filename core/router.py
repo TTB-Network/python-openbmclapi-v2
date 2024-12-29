@@ -53,8 +53,9 @@ class Router:
                 response = None
                 for storage in self.storages:
                     if isinstance(storage, AListStorage):
-                        await storage.measure(size, response)
-                        await response.prepare(request)
+                        url = storage.measure(size, response)
+                        response = web.HTTPFound(url)
+                        response.prepare(request)                        
                         return response
 
                 buffer = b"\x00\x66\xcc\xff" * 256 * 1024

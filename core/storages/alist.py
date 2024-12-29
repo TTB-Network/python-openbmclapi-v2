@@ -89,7 +89,7 @@ class AListStorage(Storage):
 
         return FileList(files=missing_files)
 
-    async def measure(self, size: int, response):
+    async def measure(self, size: int) -> str:
         file_path = f"{self.path}/measure/.{size}"
         try:
             async with aiohttp.ClientSession(self.url, headers=self.headers) as session:
@@ -98,10 +98,7 @@ class AListStorage(Storage):
                 data = await response.json()
                 logger.debug(data)
                 if data["code"] == 200:
-                    logger.debug(1)
-                    response = web.HTTPFound(data["data"]["raw_url"])
-                    return
-
+                    return data["data"]["raw_url"]
                 if data["code"] != 200:
                     logger.debug(2)
                     try:
@@ -120,9 +117,7 @@ class AListStorage(Storage):
                 data = await response.json()
                 logger.debug(data)
                 logger.debug(3)
-                response = web.HTTPFound(data["data"]["raw_url"])
-                response.prepare(request)
-                return
+                return data["data"]["raw_url"]
         except Exception as e:
             logger.terror("storage.error.alist.measure", e=e)
             return
