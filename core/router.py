@@ -40,7 +40,7 @@ class Router:
             return response
 
         @self.route.get("/measure/{size}")
-        async def _(request: web.Request) -> web.StreamResponse:
+        async def _(request: web.Request) -> web.Response:
             try:
                 size = int(request.match_info.get("size", "0"))
 
@@ -53,7 +53,8 @@ class Router:
                 response = None
                 for storage in self.storages:
                     if isinstance(storage, AListStorage):
-                        await storage.measure(size, request, response)
+                        await storage.measure(size, response)
+                        await response.prepare(request)
                         return response
 
                 buffer = b"\x00\x66\xcc\xff" * 256 * 1024
