@@ -98,11 +98,13 @@ class AListStorage(Storage):
                 data = await response.json()
                 logger.debug(data)
                 if data["code"] == 200:
+                    logger.debug(1)
                     response = web.HTTPFound(data["raw_url"])
                     response.prepare(request)
                     return
 
                 if data["code"] != 200:
+                    logger.debug(2)
                     try:
                         buffer = b"\x00\x66\xcc\xff" * 256 * 1024
                         response = await session.put("/api/fs/put", data=buffer, headers={**self.headers, "File-Path": file_path, "Content-Type": "application/octet-stream"})
@@ -117,7 +119,8 @@ class AListStorage(Storage):
                 response = await session.post("/api/fs/get", json={"path": file_path, "password": self.password})
                 response.raise_for_status()
                 data = await response.json()
-
+                logger.debug(data)
+                logger.debug(3)
                 response = web.HTTPFound(data["raw_url"])
                 response.prepare(request)
                 return
