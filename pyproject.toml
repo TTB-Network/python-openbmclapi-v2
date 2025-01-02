@@ -20,12 +20,17 @@ humanize = "^4.10.0"
 python-socketio = "^5.11.3"
 sqlalchemy = "^2.0.32"
 psutil = "^6.0.0"
+boto3 = "^1.35.90"
 
 
 [[tool.poetry.source]]
 name = "mirrors"
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 priority = "primary"
+
+
+[tool.poetry.group.dev.dependencies]
+boto3-stubs = {version = "1.35.90", extras = ["s3"]}
 
 [build-system]
 requires = ["poetry-core"]

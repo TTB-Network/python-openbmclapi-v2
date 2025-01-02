@@ -39,7 +39,7 @@ class CFG:
             self.cfg = yaml.load(f.read(), Loader=yaml.FullLoader) or {}
 
     def get(self, key: str, def_: Any = None) -> Any:
-        value = os.environ.get(key, None) or self._get_value(self.cfg, key.split("."))
+        value = os.environ.get(key, None) or self._getValue(self.cfg, key.split("."))
         if value is None and def_ is None:
             print(f"[Config] {key} is not set, does it exist?")
             if key in defaults:
@@ -49,7 +49,7 @@ class CFG:
         return value
 
     def set(self, key: str, value: Any):
-        self._set_value(self.cfg, key.split("."), value)
+        self._setValue(self.cfg, key.split("."), value)
         self.save()
 
     def save(self):
@@ -57,7 +57,7 @@ class CFG:
         with open(self.file, "w", encoding="utf-8") as f:
             yaml.dump(data=self.cfg, stream=f, allow_unicode=True)
 
-    def _get_value(self, dict_obj, keys):
+    def _getValue(self, dict_obj, keys):
         for key in keys:
             if key in dict_obj:
                 dict_obj = dict_obj[key]
@@ -65,7 +65,7 @@ class CFG:
                 return None
         return dict_obj
 
-    def _set_value(self, dict_obj, keys, value):
+    def _setValue(self, dict_obj, keys, value):
         for _, key in enumerate(keys[:-1]):
             if key not in dict_obj:
                 dict_obj[key] = {}

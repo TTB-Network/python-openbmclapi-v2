@@ -251,6 +251,7 @@ class AListStorage(Storage):
                     retry=delay,
                 )
             await asyncio.sleep(delay)
+        logger.terror("storage.error.alist.write_file.failed", file=file.hash)
         return False
 
     async def recycleFiles(files):

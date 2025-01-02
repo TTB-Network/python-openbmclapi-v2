@@ -50,26 +50,3 @@ export async function fetchRank() {
     return res.data
 }
 
-function getWebSocketURL(path: string) {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const host = window.location.host
-    return `${protocol}//${host}${path}`
-}
-
-const ws = new WebSocket(getWebSocketURL('/ws/logs'))
-
-ws.onmessage = function(event) {
-    console.log('Received log:', event.data)
-}
-
-ws.onopen = function() {
-    console.log("WebSocket connection established.")
-}
-
-ws.onclose = function() {
-    console.log("WebSocket connection closed.")
-}
-
-ws.onerror = function(error) {
-    console.error("WebSocket error:", error)
-}
