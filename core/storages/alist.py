@@ -189,7 +189,7 @@ class AListStorage(Storage):
                 counter["hits"] += 1
                 return response
             except Exception as e:
-                response = web.HTTPError(text=e)
+                response = web.HTTPError(text=str(e))
                 logger.debug(e)
                 return response
 
@@ -254,5 +254,5 @@ class AListStorage(Storage):
         logger.terror("storage.error.alist.write_file.failed", file=file.hash)
         return False
 
-    async def recycleFiles(files):
+    async def recycleFiles(self, files) -> None:
         pass

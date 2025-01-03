@@ -2,7 +2,7 @@ from core.classes import Storage, FileInfo, FileList
 from core.logger import logger
 from botocore.config import Config
 from botocore.exceptions import ClientError
-from typing import Literal, Union
+from typing import Literal, Union, Self
 from tqdm import tqdm
 import boto3
 import humanize
@@ -86,18 +86,18 @@ class S3Storage(Storage):
             logger.terror("storage.error.s3.check", e=e)
     
     async def getMissingFiles(self, files: FileList, pbar: tqdm) -> FileList:
-        async def checkFile(file: FileInfo, pbar: tqdm) -> bool:
-            pbar.update(1)
-            file_path = f"{file.hash[:2]}/{file.hash}"
-            try:
-                response = self.client.head_object(Bucket=self.bucket, Key=file_path)
-                s3_file_size = response["ContentLength"]
-                return s3_file_size != file.size
-            except Exception:
-                pass
+        s3_files = {}
+        try:
+            paginator = self.client.get_paginator("list_objects_v2")
+            async for page in paginator.paginate(Bucket=self.bucket):
+                for obj in page.get("Contents", []):
+                    s3_files[obj["Key"]] = obj["Size"]
+        except ClientError as e:
+            logger.terror("storage.error.s3.get_s3_files", e=e)
 
-        results = await asyncio.gather(*[checkFile(file, pbar) for file in files.files])
-        missing_files = [
-            file for file, is_missing in zip(files.files, results) if is_missing
-        ]
-        return FileList(files=missing_files)
+        missing_files = []
+        for file in files.files:
+            file_key = f"{file.hash[:2]}/{file.hash}"
+            if file_key not in s3_files or s3_files[file_key] != file.size:
+                missing_files.append(file)
+            pbar.update(1)

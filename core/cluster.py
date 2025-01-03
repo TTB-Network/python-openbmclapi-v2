@@ -13,7 +13,7 @@ from core.classes import FileInfo, FileList, AgentConfiguration
 from core.router import Router
 from core.orm import writeHits
 from core.i18n import locale
-from typing import List, Any
+from typing import List, Any, Union
 from aiohttp import web, ClientResponseError
 from urllib.parse import urljoin
 from tqdm import tqdm
@@ -53,7 +53,7 @@ class Token:
         if not self.id or not self.secret:
             raise ClusterIdNotSetError if not self.id else ClusterSecretNotSetError
 
-    async def fetchToken(self):
+    async def fetchToken(self) -> None:
         logger.tinfo("token.info.fetching")
         async with aiohttp.ClientSession(
             self.base_url, headers={"User-Agent": self.user_agent}
@@ -100,15 +100,15 @@ class Cluster:
         self.filelist = FileList(files=[])
         self.storages = getStorages()
         self.configuration = None
-        self.semaphore = None
-        self.socket = None
-        self.router = None
+        self.semaphore = asyncio.Semaphore()
+        self.socket = socketio.AsyncClient(handle_sigint=False)
+        self.router: Router | None = None
         self.runner = None
         self.failed_filelist = FileList(files=[])
         self.enabled = False
         self.site = None
         self.want_enable = False
-        self.scheduler = None
+        self.scheduler = scheduler
         self.start_time = int(time.time() * 1000)
 
     async def fetchFileList(self) -> None:
@@ -227,7 +227,6 @@ class Cluster:
     async def downloadFile(
         self, file: FileInfo, session: aiohttp.ClientSession, pbar: tqdm
     ) -> None:
-        # logger.debug(file)
         async with self.semaphore:
             delay, retry = Config.get("advanced.delay"), Config.get("advanced.retry")
 
@@ -255,7 +254,7 @@ class Cluster:
                         e=e.message,
                         retry=delay,
                     )
-                    self.report(e, session)
+                    await self.report(e, session)
 
                 except Exception as e:
                     logger.terror(
@@ -273,7 +272,7 @@ class Cluster:
     async def report(
         self, error: ClientResponseError, session: aiohttp.ClientSession
     ) -> None:
-        history_urls = [urljoin(self.base_url), *error.history]
+        history_urls = [*error.history]
         try:
             async with session.post(
                 "/openbmclapi/report",
@@ -402,6 +401,10 @@ class Cluster:
             logger.terror("cluster.error.keep_alive.socket_not_setup")
             return False
 
+        if self.router is None:
+            logger.terror("cluster.error.keep_alive.router_not_setup")
+            return False
+
         future = asyncio.Future()
 
         async def callback(data: List[Any]):
@@ -482,28 +485,22 @@ class Cluster:
     async def connect(self) -> None:
         if self.socket and self.socket.connected:
             return
-
-        self.socket = socketio.AsyncClient(handle_sigint=False)
-
-        @self.socket.on("connect")
-        async def _() -> None:
+        async def onConnect() -> None:
             logger.tsuccess("client.success.connected")
             await self.disable()
             if self.want_enable:
                 await self.enable()
             if self.scheduler:
                 self.scheduler.resume()
-
-        @self.socket.on("disconnect")
-        async def _() -> None:
+        async def onDisconnect() -> None:
             logger.twarning("client.warn.disconnected")
             if self.scheduler:
                 self.scheduler.pause()
-
-        @self.socket.on("message")
-        async def _(message: str) -> None:
+        async def onMessage(message: str) -> None:
             logger.tinfo("client.info.message", message=message)
-
+        self.socket.on("connect", onConnect)
+        self.socket.on("disconnect", onDisconnect)
+        self.socket.on("message", onMessage)
         await self.socket.connect(
             self.base_url,
             transports=["websocket"],

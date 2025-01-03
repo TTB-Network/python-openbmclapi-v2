@@ -37,6 +37,3 @@ async def getStatus(cluster) -> web.Response:
         "version": VERSION,
     }
     return web.json_response(data=response)
-
-async def postConfig() -> web.Response:
-    pass

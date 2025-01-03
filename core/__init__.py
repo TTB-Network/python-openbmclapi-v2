@@ -9,7 +9,7 @@ import os
 cluster = Cluster()
 
 
-async def main():
+async def main() -> None:
     try:
         await cluster.token.fetchToken()
         await cluster.getConfiguration()
@@ -23,7 +23,7 @@ async def main():
         except Exception as e:
             logger.terror("orm.error.failed", e=e)
 
-        async def syncFiles():
+        async def syncFiles() -> None:
             if cluster.scheduler:
                 cluster.scheduler.pause()
             if cluster.enabled and cluster.socket:

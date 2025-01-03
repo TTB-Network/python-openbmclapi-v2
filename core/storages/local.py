@@ -2,7 +2,7 @@ from core.classes import Storage, FileInfo, FileList
 from core.logger import logger
 from core.i18n import locale
 from aiohttp import web
-from typing import Any, Dict
+from typing import Union
 from tqdm import tqdm
 from pathlib import Path
 import os
@@ -83,7 +83,7 @@ class LocalStorage(Storage):
         ]
         return FileList(files=missing_files)
 
-    async def express(self, hash: str, counter: dict) -> web.Response:
+    async def express(self, hash: str, counter: dict) -> Union[web.Response, web.FileResponse]:
         path = os.path.join(self.path, hash[:2], hash)
         if not os.path.exists(path):
             response = web.HTTPNotFound()
@@ -96,7 +96,7 @@ class LocalStorage(Storage):
             counter["hits"] += 1
             return response
         except Exception as e:
-            response = web.HTTPError(text=e)
+            response = web.HTTPError(text=str(e))
             logger.debug(e)
             return response
 

@@ -1,10 +1,14 @@
 from core.orm import writeAgent
-from core.utils import checkSign
 from core.api import getStatus
 from core.storages import AListStorage
 from core.logger import logger
 from aiohttp import web
+from typing import Union
+from multidict import MultiMapping
 import aiohttp
+import base64
+import hashlib
+import time
 import random
 
 
@@ -19,6 +23,18 @@ class Router:
         self.ws_clients = []
         self.connection = 0
 
+    def checkSign(self, hash: str, secret: str, query: MultiMapping) -> bool:
+        if not (s := query.get("s")) or not (e := query.get("e")):
+            return False
+        sign = (
+            base64.urlsafe_b64encode(
+                hashlib.sha1(f"{secret}{hash}{e}".encode()).digest()
+            )
+            .decode()
+            .rstrip("=")
+        )
+        return sign == s and time.time() < int(e, 36)
+
     def init(self) -> None:
         @self.route.get("/download/{hash}")
         async def _(
@@ -27,7 +43,7 @@ class Router:
             self.connection += 1
             writeAgent(request.headers["User-Agent"], 1)
             file_hash = request.match_info.get("hash", "").lower()
-            if not checkSign(file_hash, self.secret, request.query):
+            if not self.checkSign(file_hash, self.secret, request.query):
                 return web.Response(text="Invalid signature.", status=403)
 
             response = await random.choice(self.storages).express(
@@ -39,15 +55,15 @@ class Router:
             return response
 
         @self.route.get("/measure/{size}")
-        async def _(request: web.Request) -> web.Response:
+        async def _(request: web.Request) -> Union[web.Response, web.StreamResponse]:
             try:
                 size = int(request.match_info.get("size", "0"))
 
                 if (
-                    not checkSign(f"/measure/{size}", self.secret, request.query)
+                    not self.checkSign(f"/measure/{size}", self.secret, request.query)
                     or size > 200
                 ):
-                    return web.Response(status=403 if size > 200 else 400)
+                    return web.HTTPForbidden() if size > 200 else web.HTTPBadRequest()
 
                 response = None
                 for storage in self.storages:

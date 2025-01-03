@@ -1,4 +1,4 @@
-from loguru import logger as Logger
+from loguru import logger as Logger, Record
 from pathlib import Path
 import sys
 from core.config import Config
@@ -8,14 +8,14 @@ basic_logger_format = "<green>[{time:YYYY-MM-DD HH:mm:ss}]</green><level>[{level
 debug_mode = Config.get("advanced.debug")
 
 
-def filter(record):
-    if "apscheduler" in record["name"]:
-        record["depth"] = 2
-    return 1
+def filter(record: Record) -> bool:
+    if record["name"] and "apscheduler" in record["name"]:
+        record["extra"] = {"depth": 2}
+    return True
 
 
 class LoggingLogger:
-    def __init__(self):
+    def __init__(self) -> None:
         self.log = Logger.opt(depth=1)
         self.log.remove()
         self.log.add(
