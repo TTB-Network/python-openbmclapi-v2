@@ -34,7 +34,7 @@ class CFG:
             for key, value in defaults.items():
                 self.set(key, value)
 
-    def load(self):
+    def load(self) -> None:
         with open(self.file, "r", encoding="utf-8") as f:
             self.cfg = yaml.load(f.read(), Loader=yaml.FullLoader) or {}
 
@@ -52,12 +52,12 @@ class CFG:
         self._setValue(self.cfg, key.split("."), value)
         self.save()
 
-    def save(self):
+    def save(self) -> None:
         self.file.parent.mkdir(parents=True, exist_ok=True)
         with open(self.file, "w", encoding="utf-8") as f:
             yaml.dump(data=self.cfg, stream=f, allow_unicode=True)
 
-    def _getValue(self, dict_obj, keys):
+    def _getValue(self, dict_obj, keys) -> dict | None:
         for key in keys:
             if key in dict_obj:
                 dict_obj = dict_obj[key]
@@ -65,7 +65,7 @@ class CFG:
                 return None
         return dict_obj
 
-    def _setValue(self, dict_obj, keys, value):
+    def _setValue(self, dict_obj, keys, value) -> None:
         for _, key in enumerate(keys[:-1]):
             if key not in dict_obj:
                 dict_obj[key] = {}

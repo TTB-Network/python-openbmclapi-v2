@@ -1,14 +1,15 @@
-from loguru import logger as Logger, Record
+from loguru import logger as Logger
 from pathlib import Path
-import sys
 from core.config import Config
 from core.i18n import locale
+import sys
+
 
 basic_logger_format = "<green>[{time:YYYY-MM-DD HH:mm:ss}]</green><level>[{level}]<yellow>[{name}:{function}:{line}]</yellow>: {message}</level>"
 debug_mode = Config.get("advanced.debug")
 
 
-def filter(record: Record) -> bool:
+def filter(record) -> bool:
     if record["name"] and "apscheduler" in record["name"]:
         record["extra"] = {"depth": 2}
     return True

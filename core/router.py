@@ -39,7 +39,7 @@ class Router:
         @self.route.get("/download/{hash}")
         async def _(
             request: web.Request,
-        ) -> web.Response:
+        ) -> Union[web.Response, web.FileResponse]:
             self.connection += 1
             writeAgent(request.headers["User-Agent"], 1)
             file_hash = request.match_info.get("hash", "").lower()

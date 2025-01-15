@@ -35,7 +35,7 @@ fi
 MIRROR_PREFIX="https://ghproxy.bugungu.top/"
 echo "MIRROR_PREFIX=${MIRROR_PREFIX}"
 
-REPO='TTB-Network/python-openbmclapi'
+REPO='TTB-Network/python-openbmclapi-v2'
 RAW_PREFIX="${MIRROR_PREFIX}https://raw.githubusercontent.com"
 RAW_REPO="$RAW_PREFIX/$REPO"
 BASE_PATH=/opt/python-openbmclapi
@@ -77,7 +77,7 @@ function fetchBlob(){
 	target=$2
 	filemod=$3
 
-	source="$RAW_REPO/master/$file"
+	source="$RAW_REPO/main/$file"
 	echo -e "\e[34m==> Downloading $source\e[0m"
 	tmpf=$(mktemp -t python-openbmclapi.XXXXXXXXXXXX.downloading)
 	curl -fsSL -o "$tmpf" "$source" || { rm "$tmpf"; return 1; }

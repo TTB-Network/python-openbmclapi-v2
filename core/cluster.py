@@ -542,7 +542,7 @@ class Cluster:
             await asyncio.gather(*(storage.check() for storage in self.storages))
         )
 
-    def readLong(self, stream: io.BytesIO):
+    def readLong(self, stream: io.BytesIO) -> int:
         result, shift = 0, 0
         while True:
             byte = ord(stream.read(1))
@@ -552,5 +552,5 @@ class Cluster:
             shift += 7
         return (result >> 1) ^ -(result & 1)
 
-    def readString(self, stream: io.BytesIO):
+    def readString(self, stream: io.BytesIO) -> str:
         return stream.read(self.readLong(stream)).decode()

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, Session, DeclarativeBase
 from datetime import timedelta, datetime
 from calendar import monthrange
 from typing import List, Dict
+from re import Match
 import time
 import re
 
@@ -44,8 +45,8 @@ def writeHits(hits: int, bytes: int) -> None:
 
 
 def writeAgent(agent: str, hits: int) -> None:
-    agent = re.match(r"^(.*?)/", agent).group(1)
-    if agent not in ["bmclapi-ctrl", "bmclapi-warden"]:
+    regex = re.match(r"^(.*?)/", agent) or Match()
+    if regex.group(1) not in ["bmclapi-ctrl", "bmclapi-warden"]:
         agent_info = session.get(AgentInfo, agent)
         if agent_info:
             agent_info.hits += hits

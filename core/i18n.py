@@ -16,7 +16,7 @@ class Locale:
     def __contains__(self, key: str):
         return key in self.data
 
-    def load(self):
+    def load(self) -> None:
         with open(self.path, "r", encoding="utf-8") as f:
             d = f.read()
             self.data = json.loads(d)
