@@ -91,11 +91,16 @@ class S3Storage(Storage):
     async def getMissingFiles(self, files: FileList, pbar: tqdm) -> FileList:
         s3_files = {}
         try:
-            paginator = self.client.get_paginator("list_objects_v2")
-            # Use asyncio.to_thread to run synchronous paginator in thread pool
-            for page in paginator.paginate(Bucket=self.bucket):
-                for obj in page.get("Contents", []):
-                    s3_files[obj["Key"]] = obj["Size"]
+            # Run synchronous paginator in thread pool to avoid blocking event loop
+            def list_s3_files():
+                files_dict = {}
+                paginator = self.client.get_paginator("list_objects_v2")
+                for page in paginator.paginate(Bucket=self.bucket):
+                    for obj in page.get("Contents", []):
+                        files_dict[obj["Key"]] = obj["Size"]
+                return files_dict
+            
+            s3_files = await asyncio.to_thread(list_s3_files)
         except ClientError as e:
             logger.terror("storage.error.s3.get_s3_files", e=e)
 
@@ -111,21 +116,21 @@ class S3Storage(Storage):
     async def express(self, hash: str, counter: dict) -> Union[web.Response, web.FileResponse]:
         file_key = f"{hash[:2]}/{hash}"
         try:
-            # Generate a presigned URL for the file
-            response = await asyncio.to_thread(
-                self.client.head_object,
-                Bucket=self.bucket,
-                Key=file_key
-            )
-            file_size = response["ContentLength"]
+            # Run S3 operations in thread pool to avoid blocking event loop
+            def get_presigned_url():
+                # Check if file exists and get size
+                response = self.client.head_object(Bucket=self.bucket, Key=file_key)
+                file_size = response["ContentLength"]
+                
+                # Generate presigned URL for downloading the file
+                url = self.client.generate_presigned_url(
+                    "get_object",
+                    Params={"Bucket": self.bucket, "Key": file_key},
+                    ExpiresIn=3600  # URL valid for 1 hour
+                )
+                return url, file_size
             
-            # Generate presigned URL for downloading the file
-            url = await asyncio.to_thread(
-                self.client.generate_presigned_url,
-                "get_object",
-                Params={"Bucket": self.bucket, "Key": file_key},
-                ExpiresIn=3600  # URL valid for 1 hour
-            )
+            url, file_size = await asyncio.to_thread(get_presigned_url)
             
             # Return redirect to presigned URL
             response = web.HTTPFound(url)
@@ -152,13 +157,17 @@ class S3Storage(Storage):
             for file in files.files
         }
         
-        # List all files in S3 bucket
+        # List all files in S3 bucket - run in thread pool to avoid blocking
         try:
-            paginator = self.client.get_paginator("list_objects_v2")
-            all_s3_keys = []
-            for page in paginator.paginate(Bucket=self.bucket):
-                for obj in page.get("Contents", []):
-                    all_s3_keys.append(obj["Key"])
+            def list_all_s3_keys():
+                keys = []
+                paginator = self.client.get_paginator("list_objects_v2")
+                for page in paginator.paginate(Bucket=self.bucket):
+                    for obj in page.get("Contents", []):
+                        keys.append(obj["Key"])
+                return keys
+            
+            all_s3_keys = await asyncio.to_thread(list_all_s3_keys)
         except ClientError as e:
             logger.terror("storage.error.s3.recycle.list", e=e)
             return
@@ -190,22 +199,29 @@ class S3Storage(Storage):
             for i in range(0, len(delete_files), 1000):
                 batch = delete_files[i:i+1000]
                 try:
-                    # Get sizes before deleting
-                    for key in batch:
-                        try:
-                            response = self.client.head_object(Bucket=self.bucket, Key=key)
-                            total_size += response["ContentLength"]
-                        except Exception:
-                            pass
+                    # Run batch operations in thread pool
+                    def process_batch():
+                        size = 0
+                        # Get sizes before deleting
+                        for key in batch:
+                            try:
+                                response = self.client.head_object(Bucket=self.bucket, Key=key)
+                                size += response["ContentLength"]
+                            except Exception:
+                                pass
+                        
+                        # Delete batch
+                        self.client.delete_objects(
+                            Bucket=self.bucket,
+                            Delete={
+                                "Objects": [{"Key": key} for key in batch],
+                                "Quiet": True
+                            }
+                        )
+                        return size
                     
-                    # Delete batch
-                    self.client.delete_objects(
-                        Bucket=self.bucket,
-                        Delete={
-                            "Objects": [{"Key": key} for key in batch],
-                            "Quiet": True
-                        }
-                    )
+                    batch_size = await asyncio.to_thread(process_batch)
+                    total_size += batch_size
                     pbar.update(len(batch))
                 except ClientError as e:
                     logger.terror("storage.error.s3.recycle", e=e)

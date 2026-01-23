@@ -8,7 +8,7 @@ import { ref } from 'vue'
 import { watch } from 'vue'
 
 const { data, refresh, loading, error } = useRequest((): Promise<StatsRes> => fetchStat(), { 
-    pollingInterval: 5000, // Poll every 5 seconds for real-time updates
+    pollingInterval: 10000, // Poll every 10 seconds for real-time updates without excessive server load
     refreshOnWindowFocus: true // Refresh when user returns to tab
 })
 
