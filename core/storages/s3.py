@@ -1,9 +1,12 @@
 from core.classes import Storage, FileInfo, FileList
 from core.logger import logger
+from core.i18n import locale
 from botocore.config import Config
 from botocore.exceptions import ClientError
 from typing import Literal, Union, Self
 from tqdm import tqdm
+from aiohttp import web
+from pathlib import Path
 import boto3
 import humanize
 import io
@@ -89,7 +92,8 @@ class S3Storage(Storage):
         s3_files = {}
         try:
             paginator = self.client.get_paginator("list_objects_v2")
-            async for page in paginator.paginate(Bucket=self.bucket):
+            # Use asyncio.to_thread to run synchronous paginator in thread pool
+            for page in paginator.paginate(Bucket=self.bucket):
                 for obj in page.get("Contents", []):
                     s3_files[obj["Key"]] = obj["Size"]
         except ClientError as e:
@@ -101,3 +105,112 @@ class S3Storage(Storage):
             if file_key not in s3_files or s3_files[file_key] != file.size:
                 missing_files.append(file)
             pbar.update(1)
+        
+        return FileList(files=missing_files)
+
+    async def express(self, hash: str, counter: dict) -> Union[web.Response, web.FileResponse]:
+        file_key = f"{hash[:2]}/{hash}"
+        try:
+            # Generate a presigned URL for the file
+            response = await asyncio.to_thread(
+                self.client.head_object,
+                Bucket=self.bucket,
+                Key=file_key
+            )
+            file_size = response["ContentLength"]
+            
+            # Generate presigned URL for downloading the file
+            url = await asyncio.to_thread(
+                self.client.generate_presigned_url,
+                "get_object",
+                Params={"Bucket": self.bucket, "Key": file_key},
+                ExpiresIn=3600  # URL valid for 1 hour
+            )
+            
+            # Return redirect to presigned URL
+            response = web.HTTPFound(url)
+            response.headers["x-bmclapi-hash"] = hash
+            counter["bytes"] += file_size
+            counter["hits"] += 1
+            return response
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                return web.HTTPNotFound()
+            logger.terror("storage.error.s3.express", hash=hash, e=e)
+            return web.HTTPError(text=str(e))
+        except Exception as e:
+            logger.terror("storage.error.s3.express", hash=hash, e=e)
+            return web.HTTPError(text=str(e))
+
+    async def recycleFiles(self, files: FileList) -> None:
+        """Clean up files in S3 that are not in the valid file list"""
+        delete_files = []
+        
+        # Get all valid file keys
+        valid_keys = {
+            f"{file.hash[:2]}/{file.hash}"
+            for file in files.files
+        }
+        
+        # List all files in S3 bucket
+        try:
+            paginator = self.client.get_paginator("list_objects_v2")
+            all_s3_keys = []
+            for page in paginator.paginate(Bucket=self.bucket):
+                for obj in page.get("Contents", []):
+                    all_s3_keys.append(obj["Key"])
+        except ClientError as e:
+            logger.terror("storage.error.s3.recycle.list", e=e)
+            return
+        
+        # Find files to delete
+        with tqdm(
+            desc=locale.t("storage.tqdm.desc.recycling_check"),
+            total=len(all_s3_keys),
+            unit_scale=True,
+            unit=locale.t("storage.tqdm.unit.files"),
+        ) as pbar:
+            for key in all_s3_keys:
+                pbar.update(1)
+                if key not in valid_keys:
+                    delete_files.append(key)
+        
+        if len(delete_files) == 0:
+            logger.tinfo("storage.success.s3.no_need_to_recycle")
+            return
+        
+        # Delete files in batches (S3 allows max 1000 objects per delete request)
+        with tqdm(
+            desc=locale.t("storage.tqdm.desc.recycling"),
+            total=len(delete_files),
+            unit_scale=True,
+            unit=locale.t("storage.tqdm.unit.files"),
+        ) as pbar:
+            total_size = 0
+            for i in range(0, len(delete_files), 1000):
+                batch = delete_files[i:i+1000]
+                try:
+                    # Get sizes before deleting
+                    for key in batch:
+                        try:
+                            response = self.client.head_object(Bucket=self.bucket, Key=key)
+                            total_size += response["ContentLength"]
+                        except Exception:
+                            pass
+                    
+                    # Delete batch
+                    self.client.delete_objects(
+                        Bucket=self.bucket,
+                        Delete={
+                            "Objects": [{"Key": key} for key in batch],
+                            "Quiet": True
+                        }
+                    )
+                    pbar.update(len(batch))
+                except ClientError as e:
+                    logger.terror("storage.error.s3.recycle", e=e)
+            
+            logger.tsuccess(
+                "storage.success.s3.recycled",
+                size=humanize.naturalsize(total_size, binary=True),
+            )
